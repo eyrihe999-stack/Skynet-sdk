@@ -55,6 +55,7 @@ func GenerateCard(cfg *AgentConfig, skills []Skill) protocol.AgentCard {
 			OutputSchema:       s.Output.ToJSONSchema(),
 			Visibility:         vis,
 			ApprovalMode:       approval,
+			Async:              s.Async,
 			EstimatedLatencyMs: s.EstimatedLatencyMs,
 		}
 		card.Capabilities = append(card.Capabilities, cap)

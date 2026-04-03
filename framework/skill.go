@@ -54,6 +54,7 @@ type Skill struct {
 	Output             Schema
 	Visibility         Visibility
 	ApprovalMode       ApprovalMode
+	Async              bool
 	EstimatedLatencyMs uint
 	Handler            HandlerFunc
 }
