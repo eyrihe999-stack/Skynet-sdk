@@ -1,6 +1,6 @@
 package framework
 
-import "github.com/skynetplatform/skynet-sdk/protocol"
+import "github.com/eyrihe999-stack/Skynet-sdk/protocol"
 
 // frameworkVersion 是当前 Skynet Agent 框架 SDK 的版本号。
 //

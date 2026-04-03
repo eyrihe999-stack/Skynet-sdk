@@ -7,8 +7,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/skynetplatform/skynet-sdk/logger"
-	"github.com/skynetplatform/skynet-sdk/protocol"
+	"github.com/eyrihe999-stack/Skynet-sdk/logger"
+	"github.com/eyrihe999-stack/Skynet-sdk/protocol"
 )
 
 // LocalServer 是本地开发 HTTP 服务器，用于在不连接 Skynet 网络的情况下测试 Agent 的 Skill。

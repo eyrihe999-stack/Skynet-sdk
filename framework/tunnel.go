@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/skynetplatform/skynet-sdk/logger"
-	"github.com/skynetplatform/skynet-sdk/protocol"
+	"github.com/eyrihe999-stack/Skynet-sdk/logger"
+	"github.com/eyrihe999-stack/Skynet-sdk/protocol"
 )
 
 // TunnelClient 是 WebSocket 反向通道客户端，负责管理 Agent 与 Gateway 之间的持久连接。

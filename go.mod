@@ -1,4 +1,4 @@
-module github.com/skynetplatform/skynet-sdk
+module github.com/eyrihe999-stack/Skynet-sdk
 
 go 1.25.6
 
