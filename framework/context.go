@@ -3,6 +3,7 @@ package framework
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/eyrihe999-stack/Skynet-sdk/protocol"
 )
@@ -20,6 +21,22 @@ type Context struct {
 	context.Context
 	RequestID string
 	Caller    protocol.CallerInfo
+	invoker   *Invoker
+}
+
+// Invoke 调用网络上另一个 Agent 的 Skill。
+// 自动携带认证信息和 call_chain，使 Gateway 能追踪完整调用路径。
+//
+// 使用示例：
+//
+//	result, err := ctx.Invoke("legal-bot", "review_contract", map[string]any{
+//	    "contract_text": "...",
+//	})
+func (c Context) Invoke(targetAgent, skill string, input any) (*InvokeResult, error) {
+	if c.invoker == nil {
+		return nil, fmt.Errorf("invoke not available: agent not connected to network")
+	}
+	return c.invoker.Invoke(targetAgent, skill, input)
 }
 
 // Input 提供对 Skill 输入数据的类型安全访问。

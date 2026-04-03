@@ -25,13 +25,15 @@ import (
 //   - done: 关闭信号通道，用于协调各 goroutine 的优雅退出
 //   - mu: 互斥锁，保护 WebSocket 写操作的并发安全（WebSocket 不支持并发写入）
 type TunnelClient struct {
-	gatewayURL string
-	card       protocol.AgentCard
-	skills     map[string]Skill
-	conn       *websocket.Conn
-	done       chan struct{}
-	mu         sync.Mutex
-	wg         sync.WaitGroup
+	gatewayURL  string
+	registryURL string // HTTP base URL for invoke (e.g. http://localhost:9090)
+	apiKey      string // API Key for authentication
+	card        protocol.AgentCard
+	skills      map[string]Skill
+	conn        *websocket.Conn
+	done        chan struct{}
+	mu          sync.Mutex
+	wg          sync.WaitGroup
 }
 
 // NewTunnelClient 创建一个新的 WebSocket 反向通道客户端实例。
@@ -46,12 +48,14 @@ type TunnelClient struct {
 //
 // 返回值：
 //   - *TunnelClient: 初始化完成的通道客户端实例
-func NewTunnelClient(gatewayURL string, card protocol.AgentCard, skills map[string]Skill) *TunnelClient {
+func NewTunnelClient(gatewayURL, registryURL, apiKey string, card protocol.AgentCard, skills map[string]Skill) *TunnelClient {
 	return &TunnelClient{
-		gatewayURL: gatewayURL,
-		card:       card,
-		skills:     skills,
-		done:       make(chan struct{}),
+		gatewayURL:  gatewayURL,
+		registryURL: registryURL,
+		apiKey:      apiKey,
+		card:        card,
+		skills:      skills,
+		done:        make(chan struct{}),
 	}
 }
 
@@ -288,9 +292,10 @@ func (t *TunnelClient) handleInvoke(msg protocol.Message) {
 	}
 
 	ctx := Context{
-		Context:   nil, // TODO: add timeout context
+		Context:   nil,
 		RequestID: msg.RequestID,
 		Caller:    payload.Caller,
+		invoker:   t.newInvoker(payload.CallChain),
 	}
 
 	output, err := skill.Handler(ctx, input)
@@ -313,6 +318,19 @@ func (t *TunnelClient) handleInvoke(msg protocol.Message) {
 		Status: "completed",
 		Output: outputBytes,
 	})
+}
+
+// newInvoker 创建一个 Invoker 实例，用于在 Handler 中调用其他 Agent。
+func (t *TunnelClient) newInvoker(callChain []string) *Invoker {
+	if t.registryURL == "" || t.apiKey == "" {
+		return nil
+	}
+	return &Invoker{
+		registryURL: t.registryURL,
+		apiKey:      t.apiKey,
+		agentID:     t.card.AgentID,
+		callChain:   callChain,
+	}
 }
 
 // handleReply 处理来自 Gateway 的多轮对话回复消息。
@@ -366,6 +384,7 @@ func (t *TunnelClient) handleReply(msg protocol.Message) {
 		Context:   nil,
 		RequestID: msg.RequestID,
 		Caller:    payload.Caller,
+		invoker:   t.newInvoker(nil),
 	}
 
 	output, err := skill.Handler(ctx, input)

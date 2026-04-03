@@ -151,7 +151,8 @@ func (a *Agent) runProd() {
 	gatewayURL = strings.Replace(gatewayURL, "https://", "wss://", 1)
 	gatewayURL = strings.Replace(gatewayURL, "http://", "ws://", 1)
 
-	tunnel := NewTunnelClient(gatewayURL, agentCard, a.skills)
+	registryURL := strings.TrimSuffix(a.config.Network.Registry, "/")
+	tunnel := NewTunnelClient(gatewayURL, registryURL, a.config.Network.APIKey, agentCard, a.skills)
 
 	// 优雅关闭：监听系统终止信号
 	sigCh := make(chan os.Signal, 1)
