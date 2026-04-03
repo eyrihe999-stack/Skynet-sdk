@@ -88,3 +88,91 @@ func (inv *Invoker) Invoke(targetAgent, skill string, input any) (*InvokeResult,
 
 	return &result, nil
 }
+
+// AgentInfo 是从 Platform 查询到的 Agent 信息。
+type AgentInfo struct {
+	AgentID      string       `json:"agent_id"`
+	DisplayName  string       `json:"display_name"`
+	Description  string       `json:"description"`
+	Status       string       `json:"status"`
+	Version      string       `json:"version"`
+	Capabilities []SkillInfo  `json:"capabilities,omitempty"`
+}
+
+// SkillInfo 是从 Platform 查询到的 Skill 信息。
+type SkillInfo struct {
+	AgentID       string         `json:"agent_id"`
+	Name          string         `json:"name"`
+	DisplayName   string         `json:"display_name"`
+	Description   string         `json:"description"`
+	Category      string         `json:"category"`
+	Tags          []string       `json:"tags,omitempty"`
+	InputSchema   map[string]any `json:"input_schema,omitempty"`
+	OutputSchema  map[string]any `json:"output_schema,omitempty"`
+	Visibility    string         `json:"visibility"`
+	CallCount     uint64         `json:"call_count"`
+	SuccessCount  uint64         `json:"success_count"`
+}
+
+// SearchSkills 搜索网络上可用的 Skill。
+// query 为搜索关键词，支持语义搜索（如果 Platform 启用了 embedding）。
+func (inv *Invoker) SearchSkills(query string) ([]SkillInfo, error) {
+	url := fmt.Sprintf("%s/api/v1/capabilities?q=%s&page_size=20", inv.registryURL, query)
+	data, err := inv.apiGet(url)
+	if err != nil {
+		return nil, err
+	}
+
+	var paged struct {
+		Items []SkillInfo `json:"items"`
+	}
+	if err := json.Unmarshal(data, &paged); err != nil {
+		return nil, fmt.Errorf("parse skills failed: %w", err)
+	}
+	return paged.Items, nil
+}
+
+// GetAgent 查询某个 Agent 的详细信息，包括它的 Skill 列表。
+func (inv *Invoker) GetAgent(agentID string) (*AgentInfo, error) {
+	url := fmt.Sprintf("%s/api/v1/agents/%s", inv.registryURL, agentID)
+	data, err := inv.apiGet(url)
+	if err != nil {
+		return nil, err
+	}
+
+	var agent AgentInfo
+	if err := json.Unmarshal(data, &agent); err != nil {
+		return nil, fmt.Errorf("parse agent failed: %w", err)
+	}
+	return &agent, nil
+}
+
+// apiGet 是内部 HTTP GET 辅助方法，自动携带认证头并解析统一响应格式。
+func (inv *Invoker) apiGet(url string) (json.RawMessage, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("X-API-Key", inv.apiKey)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+
+	var apiResp struct {
+		Code    int             `json:"code"`
+		Message string          `json:"message"`
+		Data    json.RawMessage `json:"data"`
+	}
+	if err := json.Unmarshal(body, &apiResp); err != nil {
+		return nil, fmt.Errorf("parse response failed: %w", err)
+	}
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("request failed: %s", apiResp.Message)
+	}
+	return apiResp.Data, nil
+}

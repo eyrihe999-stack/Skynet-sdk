@@ -39,6 +39,36 @@ func (c Context) Invoke(targetAgent, skill string, input any) (*InvokeResult, er
 	return c.invoker.Invoke(targetAgent, skill, input)
 }
 
+// SearchSkills 搜索网络上可用的 Skill。
+//
+// 使用示例：
+//
+//	skills, err := ctx.SearchSkills("合同审查")
+//	for _, s := range skills {
+//	    fmt.Printf("%s/%s: %s\n", s.AgentID, s.Name, s.Description)
+//	}
+func (c Context) SearchSkills(query string) ([]SkillInfo, error) {
+	if c.invoker == nil {
+		return nil, fmt.Errorf("search not available: agent not connected to network")
+	}
+	return c.invoker.SearchSkills(query)
+}
+
+// GetAgent 查询网络上某个 Agent 的详细信息，包括它提供的所有 Skill。
+//
+// 使用示例：
+//
+//	agent, err := ctx.GetAgent("legal-bot")
+//	for _, skill := range agent.Capabilities {
+//	    fmt.Printf("  %s: %s\n", skill.Name, skill.Description)
+//	}
+func (c Context) GetAgent(agentID string) (*AgentInfo, error) {
+	if c.invoker == nil {
+		return nil, fmt.Errorf("get agent not available: agent not connected to network")
+	}
+	return c.invoker.GetAgent(agentID)
+}
+
 // Input 提供对 Skill 输入数据的类型安全访问。
 //
 // Input 封装了从 JSON 解析出的原始 map 数据，并提供一系列类型化的访问器方法
