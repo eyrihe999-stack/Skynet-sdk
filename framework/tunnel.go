@@ -497,13 +497,7 @@ func (t *TunnelClient) ConnectWithRetry() {
 		err := t.Connect()
 		if err == nil {
 			t.Wait()
-			// 连接曾建立但后来断开
-			select {
-			case <-t.done:
-				return
-			default:
-			}
-			// 重置状态准备重连
+			// 重置状态准备重连（done 已在 readLoop 退出时被 close）
 			t.done = make(chan struct{})
 			backoff = time.Second
 			attempt = 0
